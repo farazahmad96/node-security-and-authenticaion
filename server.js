@@ -16,14 +16,14 @@ const config = {
 };
 
 const AUTH_OPTIONS = {
-    callbackURL: '/auth/google/callback',
     clientID: config.CLIENT_ID,
-    clientSecret: config.CLIENT_SECRET
+    clientSecret: config.CLIENT_SECRET,
+    callbackURL: '/auth/google/callback'
 }
 
-function verifyCallback(accessToken, refreshToken, profile, done) {
+function verifyCallback(request, accessToken, refreshToken, profile, done) {
     console.log('Google profile', profile);
-    done(null, profile);
+    return done(null, profile);
 }
 
 passport.use(new Strategy(AUTH_OPTIONS, verifyCallback));
@@ -43,9 +43,20 @@ function checkLoggedIn(req, res, next) {
     next();
 }
 
-app.get('/auth/google', (req, res) => { });
+app.get('/auth/google',
+    passport.authenticate('google', {
+        scope: ['email'],
+    }));
 
-app.get('/auth/google/callback', (req, res) => { });
+app.get('/auth/google/callback',
+    passport.authenticate('google', {
+        failureRedirect: '/failure',
+        successRedirect: '/',
+        session: false,
+    }),
+    (req, res) => {
+        console.log('Google called us back!');
+    });
 
 app.get('/auth/logout', (req, res) => { })
 
@@ -55,6 +66,10 @@ app.get('/secret', checkLoggedIn, (req, res) => {
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.get('/failure', (req, res) => {
+    res.send('Failed to log in!')
 });
 
 https.createServer({
