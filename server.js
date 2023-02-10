@@ -84,7 +84,14 @@ app.get('/auth/google/callback',
         console.log('Google called us back!');
     });
 
-app.get('/auth/logout', (req, res) => { })
+app.get('/auth/logout', (req, res, next) => {
+    // req.logout(); //Removes req.user and clears any logged in session
+    // return res.redirect('/');
+    req.logout(function (err) {
+        if (err) { return next(err); }
+        res.redirect('/');
+    });
+});
 
 app.get('/secret', checkLoggedIn, (req, res) => {
     return res.send('Your personal secret value is 42!');
