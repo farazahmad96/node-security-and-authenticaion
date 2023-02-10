@@ -32,6 +32,19 @@ function verifyCallback(request, accessToken, refreshToken, profile, done) {
 
 passport.use(new Strategy(AUTH_OPTIONS, verifyCallback));
 
+//save the session to the cookie
+passport.serializeUser((user, done) => {
+    done(null, user.id);
+});
+
+//read the session from the cookie
+passport.deserializeUser((id, done) => {
+    User.findById(id).then(user => {
+        done(null, obj);
+    }); //req.user
+    done(null, id);
+});
+
 const app = express();
 
 app.use(helmet());
@@ -40,15 +53,18 @@ app.use(cookieSession({
     name: 'session',
     maxAge: 24 * 60 * 60 * 1000,
     keys: [config.COOKIE_KEY_1, config.COOKIE_KEY_2],
-}))
-app.use(passport.initialize());
+}));
 
-function checkLoggedIn(req, res, next) {
-    const isLoggedIn = true; //TODO
+app.use(passport.initialize());
+app.use(passport.session());
+
+function checkLoggedIn(req, res, next) { //req.user
+    console.log('Current user is:', req.user);
+    const isLoggedIn = req.isAuthenticated() && req.user; //TODO
     if (!isLoggedIn) {
         return res.status(401).json({
             error: 'You must log in!',
-        })
+        });
     }
     next();
 }
